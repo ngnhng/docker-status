@@ -86,6 +86,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Show confirmation dialog
 			m.showDeleteConfirmation()
 
+		case key.Matches(msg, m.keys.Stop):
+			if m.currentView == ContainersView {
+				m.showStopConfirmation()
+			}
+
 		case key.Matches(msg, m.keys.Help):
 			m.showHelp = !m.showHelp
 
@@ -260,6 +265,7 @@ func (m *Model) renderFooter() string {
 			"↑/↓: navigate",
 			"r: refresh",
 			"g: group toggle",
+			"ctrl+s: stop",
 			"d: delete",
 			"L: logs",
 			"q: quit",
@@ -558,22 +564,16 @@ func (m *Model) deleteVolume(vol *volume.Volume) tea.Cmd {
 }
 
 // Group operations for Docker Compose projects
-
 func (m *Model) stopGroup(group ContainerGroup) tea.Cmd {
 	return func() tea.Msg {
-		// Extract project name from group name (assuming it's the same)
 		projectName := group.Name
-
-		// Extract service names from containers
 		var services []string
 		for _, container := range group.Containers {
-			// Extract service name from container labels
 			if serviceName, exists := container.Labels["com.docker.compose.service"]; exists {
 				services = append(services, serviceName)
 			}
 		}
 
-		// Stop the compose stack
 		err := stopComposeStack(m.dockerCli, projectName, services, nil, 30)
 		if err != nil {
 			return errorMsg{err}
@@ -585,19 +585,15 @@ func (m *Model) stopGroup(group ContainerGroup) tea.Cmd {
 
 func (m *Model) startGroup(group ContainerGroup) tea.Cmd {
 	return func() tea.Msg {
-		// Extract project name from group name
 		projectName := group.Name
 
-		// Extract service names from containers
 		var services []string
 		for _, container := range group.Containers {
-			// Extract service name from container labels
 			if serviceName, exists := container.Labels["com.docker.compose.service"]; exists {
 				services = append(services, serviceName)
 			}
 		}
 
-		// Start the compose stack
 		err := startComposeStack(m.dockerCli, projectName, services, nil)
 		if err != nil {
 			return errorMsg{err}
@@ -609,7 +605,6 @@ func (m *Model) startGroup(group ContainerGroup) tea.Cmd {
 
 func (m *Model) deleteGroup(group ContainerGroup) tea.Cmd {
 	return func() tea.Msg {
-		// Extract project name from group name
 		projectName := group.Name
 
 		// Delete the entire compose stack (containers, networks, volumes, images)
@@ -645,4 +640,37 @@ func (m *Model) handleDataRefresh(msg dataRefreshedMsg) {
 
 	m.status = fmt.Sprintf("Last updated: %s", time.Now().Format("15:04:05"))
 	m.err = nil
+}
+
+func (m *Model) showStopConfirmation() {
+	if container := m.containerTable.GetSelectedContainer(); container != nil {
+		if strings.Contains(strings.ToLower(container.Status), "exited") ||
+			strings.Contains(strings.ToLower(container.Status), "created") {
+			m.status = fmt.Sprintf("Container %s is already stopped", container.ID[:12])
+			return
+		}
+
+		message := fmt.Sprintf("Are you sure you want to stop container '%s'?", container.ID[:12])
+		m.confirmDialog = NewConfirmationDialog(message)
+		m.confirmDialog.SetSize(m.width, m.height)
+		m.confirmDialog.Show()
+		m.pendingAction = func() tea.Cmd {
+			return m.stopContainer(*container)
+		}
+	}
+}
+
+func (m *Model) stopContainer(cont container.Summary) tea.Cmd {
+	return func() tea.Msg {
+		timeout := 30
+		stopOptions := container.StopOptions{
+			Timeout: &timeout,
+		}
+
+		err := m.dockerClient.ContainerStop(m.ctx, cont.ID, stopOptions)
+		if err != nil {
+			return errorMsg{err}
+		}
+		return statusMsg(fmt.Sprintf("Container %s stopped", cont.ID[:12]))
+	}
 }

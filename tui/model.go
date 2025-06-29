@@ -109,6 +109,7 @@ type KeyMap struct {
 	Quit         key.Binding
 	Help         key.Binding
 	Delete       key.Binding
+	Stop         key.Binding
 	Logs         key.Binding
 	Containers   key.Binding
 	Images       key.Binding
@@ -165,6 +166,10 @@ func DefaultKeyMap() KeyMap {
 		Delete: key.NewBinding(
 			key.WithKeys("d", "delete"),
 			key.WithHelp("d", "delete"),
+		),
+		Stop: key.NewBinding(
+			key.WithKeys("ctrl+s"),
+			key.WithHelp("ctrl+s", "stop container"),
 		),
 		Logs: key.NewBinding(
 			key.WithKeys("L"),
