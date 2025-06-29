@@ -11,10 +11,16 @@ A K9s-inspired terminal user interface (TUI) for Docker management.
 1. Build the plugin:
 
    ```bash
-   go build -o docker-status
+   make build
    ```
 
 2. Install as a Docker CLI plugin:
+
+   ```bash
+   make install
+   ```
+
+   or
 
    ```bash
    mkdir -p ~/.docker/cli-plugins
@@ -22,9 +28,10 @@ A K9s-inspired terminal user interface (TUI) for Docker management.
    chmod +x ~/.docker/cli-plugins/docker-status
    ```
 
-3. Verify installation:
+   or create a symlink to your preferred location using
+
    ```bash
-   docker status --help
+   ln -sf $(your_location)/docker-status ~/.docker/cli-plugins/docker-status
    ```
 
 ### Standalone Usage
@@ -32,7 +39,7 @@ A K9s-inspired terminal user interface (TUI) for Docker management.
 You can also run it directly:
 
 ```bash
-./docker-status
+./docker-status status
 ```
 
 ## Contributing
