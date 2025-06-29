@@ -42,6 +42,12 @@ You can also run it directly:
 ./docker-status status
 ```
 
+## Roadmap
+
+- [ ] Log viewer
+- [ ] Remote SSH
+- [ ] Docker Compose integration
+
 ## Contributing
 
 Contributions are welcome! Please:
