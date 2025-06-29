@@ -2,6 +2,8 @@
 
 A K9s-inspired terminal user interface (TUI) for Docker management.
 
+<img src="./media/banner.png"/>
+
 ## Installation
 
 ### As a Docker CLI Plugin
